@@ -110,7 +110,7 @@ class="form-canvas"
 </template>
 
 <script>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import draggable from 'vuedraggable';
 import FormField from './components/FormField.vue';
 import PropertiesPanel from './components/PropertiesPanel.vue';
@@ -203,33 +203,51 @@ const propertiesStyle = computed(() => ({
 width: props.content?.propertiesWidth || '300px'
 }));
 
-const { getIcon } = wwLib.useIcons();
-const previewIcon = ref('');
-const exportIcon = ref('');
-const clearIcon = ref('');
-const dragIcon = ref('');
+// Icons with fallback SVGs
+const previewIcon = ref('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>');
+const exportIcon = ref('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>');
+const clearIcon = ref('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>');
+const dragIcon = ref('<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path></svg>');
 const fieldIcons = ref({});
 
-const loadIcons = async () => {
-previewIcon.value = await getIcon('eye');
-exportIcon.value = await getIcon('download');
-clearIcon.value = await getIcon('trash');
-dragIcon.value = await getIcon('cursor');
+// Initialize field icons with simple fallbacks
+const initFieldIcons = () => {
+Object.keys(FIELD_ICONS).forEach(fieldType => {
+fieldIcons.value[fieldType] = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg>';
+});
+};
+
+initFieldIcons();
+
+// Load real icons asynchronously
+onMounted(async () => {
+console.log('[FormBuilder] Component mounted');
+console.log('[FormBuilder] fieldTypesList:', fieldTypesList.value);
+console.log('[FormBuilder] formFields:', formFields.value);
+try {
+const { getIcon } = wwLib.useIcons();
+previewIcon.value = await getIcon('eye') || previewIcon.value;
+exportIcon.value = await getIcon('download') || exportIcon.value;
+clearIcon.value = await getIcon('trash') || clearIcon.value;
+dragIcon.value = await getIcon('cursor') || dragIcon.value;
 
 // Load field type icons
 for (const [fieldType, iconName] of Object.entries(FIELD_ICONS)) {
 try {
-fieldIcons.value[fieldType] = await getIcon(iconName);
+const icon = await getIcon(iconName);
+if (icon) fieldIcons.value[fieldType] = icon;
 } catch (error) {
-fieldIcons.value[fieldType] = `<svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="3"/></svg>`;
+console.warn(`[FormBuilder] Failed to load icon for ${fieldType}:`, error);
 }
 }
-};
-
-loadIcons();
+console.log('[FormBuilder] Icons loaded successfully');
+} catch (error) {
+console.warn('[FormBuilder] Failed to load icons:', error);
+}
+});
 
 const getFieldIcon = (type) => {
-return fieldIcons.value[type] || `<svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="3"/></svg>`;
+return fieldIcons.value[type] || '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg>';
 };
 
 const cloneField = (field) => {
@@ -246,7 +264,10 @@ conditionalLogic: null
 };
 
 const cloneFieldType = (fieldType) => {
-return getFieldTemplate(fieldType.type);
+console.log('[FormBuilder] Cloning field type:', fieldType);
+const newField = getFieldTemplate(fieldType.type);
+console.log('[FormBuilder] Created field:', newField);
+return newField;
 };
 
 const selectField = (field) => {
@@ -297,10 +318,12 @@ event: { fieldId, value, formData: formValues.value }
 };
 
 const togglePreview = () => {
+console.log('[FormBuilder] Toggling preview mode');
 isPreviewMode.value = !isPreviewMode.value;
 if (isPreviewMode.value) {
 selectedField.value = null;
 }
+console.log('[FormBuilder] Preview mode:', isPreviewMode.value);
 };
 
 const exportForm = () => {
@@ -554,7 +577,7 @@ overflow-y: auto;
 padding: 16px;
 }
 
-.field-types-list {
+.fields-list {
 display: flex;
 flex-direction: column;
 gap: 8px;

@@ -230,24 +230,21 @@ sidebarHeaderElement: {
 hidden: true,
 defaultValue: {
 isWwObject: true,
-type: 'ww-flexbox',
-name: 'Sidebar Header'
+type: 'ww-flexbox'
 }
 },
 canvasHeaderElement: {
 hidden: true,
 defaultValue: {
 isWwObject: true,
-type: 'ww-flexbox',
-name: 'Canvas Header'
+type: 'ww-flexbox'
 }
 },
 propertiesFooterElement: {
 hidden: true,
 defaultValue: {
 isWwObject: true,
-type: 'ww-flexbox',
-name: 'Properties Footer'
+type: 'ww-flexbox'
 }
 }
 },
