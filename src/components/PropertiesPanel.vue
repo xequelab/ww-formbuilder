@@ -306,7 +306,7 @@
 
       <!-- Footer Dropzone -->
 <div class="panel-footer">
-<wwElement v-bind="propertiesFooterElement" />
+<wwobject v-bind="propertiesFooterElement" />
 </div>
 </div>
 </div>

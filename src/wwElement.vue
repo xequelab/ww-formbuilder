@@ -4,14 +4,14 @@
 <div class="sidebar" :style="sidebarStyle">
 <div class="sidebar-header">
 <h3>Form Fields</h3>
-<wwElement v-bind="content.sidebarHeaderElement" />
+<wwobject v-bind="content.sidebarHeaderElement" />
 </div>
 
 <div class="sidebar-content">
 <draggable
-v-model="availableFields"
+v-model="fieldTypesList"
 :group="{ name: 'fields', pull: 'clone', put: false }"
-:clone="cloneField"
+:clone="cloneFieldType"
 :sort="false"
 item-key="type"
 class="fields-list"
@@ -33,7 +33,7 @@ class="fields-list"
 <h2>{{ content.formTitle || 'Form Builder' }}</h2>
 <p v-if="content.formDescription">{{ content.formDescription }}</p>
 </div>
-<wwElement v-bind="content.canvasHeaderElement" />
+<wwobject v-bind="content.canvasHeaderElement" />
 <div class="canvas-actions">
 <button 
 @click="togglePreview" 
@@ -208,19 +208,28 @@ const previewIcon = ref('');
 const exportIcon = ref('');
 const clearIcon = ref('');
 const dragIcon = ref('');
+const fieldIcons = ref({});
 
 const loadIcons = async () => {
 previewIcon.value = await getIcon('eye');
 exportIcon.value = await getIcon('download');
 clearIcon.value = await getIcon('trash');
 dragIcon.value = await getIcon('cursor');
+
+// Load field type icons
+for (const [fieldType, iconName] of Object.entries(FIELD_ICONS)) {
+try {
+fieldIcons.value[fieldType] = await getIcon(iconName);
+} catch (error) {
+fieldIcons.value[fieldType] = `<svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="3"/></svg>`;
+}
+}
 };
 
 loadIcons();
 
 const getFieldIcon = (type) => {
-const iconName = FIELD_ICONS[type] || 'text';
-return `<svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><use href="#${iconName}"></use></svg>`;
+return fieldIcons.value[type] || `<svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="3"/></svg>`;
 };
 
 const cloneField = (field) => {
@@ -457,6 +466,21 @@ updateFormConfig();
 }
 }, { immediate: true });
 
+// Expose methods for WeWeb actions
+wwLib.useComponentActions({
+uid: props.uid,
+actions: {
+importForm,
+exportForm,
+resetForm,
+clearForm,
+getFieldById,
+setFieldValue,
+validateForm,
+togglePreview
+}
+});
+
 return {
 formFields,
 selectedField,
@@ -473,6 +497,7 @@ previewIcon,
 exportIcon,
 clearIcon,
 dragIcon,
+fieldIcons,
 getFieldIcon,
 cloneFieldType,
 cloneField,
