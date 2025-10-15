@@ -1,5 +1,6 @@
 <template>
-  <div class="form-builder" :style="containerStyle">
+  <div class="form-builder-wrapper">
+    <div class="form-builder" :style="containerStyle">
     <!-- Sidebar -->
     <div class="sidebar">
       <div class="sidebar-header">
@@ -155,6 +156,7 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 </template>
 
@@ -182,7 +184,7 @@ export default {
     /* wwEditor:start */
     wwEditorState: {
       type: Object,
-      default: () => ({})
+      required: true
     }
     /* wwEditor:end */
   },
@@ -313,6 +315,12 @@ export default {
 <style scoped>
 * {
   box-sizing: border-box;
+}
+
+.form-builder-wrapper {
+  width: 100%;
+  height: 100%;
+  min-height: 600px;
 }
 
 .form-builder {

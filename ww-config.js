@@ -1,4 +1,10 @@
 export default {
+  options: {
+    displayAllowedValues: ['flex', 'block']
+  },
+  inherit: {
+    type: 'ww-flexbox'
+  },
   editor: {
     label: {
       en: 'Form Builder'

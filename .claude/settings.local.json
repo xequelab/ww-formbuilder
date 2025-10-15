@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nForm Builder 2.0 - Reescrito do zero com design moderno\n\nComponente completamente reconstruído com:\n\n✨ Features:\n- Design moderno e caprichado com gradientes e animações\n- Apenas campo de texto (versão simplificada)\n- Drag & drop funcional com vuedraggable\n- Preview mode para testar o formulário\n- Painel de propriedades responsivo\n- Estados vazios elegantes\n\n🎨 Design:\n- Gradientes roxos modernos\n- Animações suaves e transições\n- Bordas arredondadas e sombras sutis\n- Ícones SVG inline\n- Scrollbars customizadas\n- Layout responsivo\n\n🏗️ Arquitetura:\n- Código limpo e organizado\n- Componentes separados (FormField, FieldTypes)\n- Sistema de eventos do WeWeb\n- Variáveis de componente (formData)\n- Actions expostas (clearForm, togglePreview)\n\n📦 Estrutura:\n- wwElement.vue - Componente principal\n- FormField.vue - Componente de campo\n- FieldTypes.js - Configuração de tipos\n- ww-config.js - Configuração do WeWeb\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit -m \"$(cat <<''EOF''\nFIX CRÍTICO: Componente agora renderiza corretamente no WeWeb\n\nCorreções urgentes:\n- Adicionado options.displayAllowedValues no ww-config.js\n- Adicionado inherit type ww-flexbox\n- Corrigido wwEditorState para required: true\n- Adicionado wrapper .form-builder-wrapper\n- Definido min-height para garantir visibilidade\n\nO componente agora deve aparecer corretamente no WeWeb!\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
