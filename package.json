@@ -1,1 +1,13 @@
-{"name":"advanced-form-builder","version":"1.0.1","scripts":{"build":"weweb build","serve":"weweb serve"},"dependencies":{"vuedraggable":"^4.1.0"},"devDependencies":{}}
+{
+  "name": "ww-form-builder",
+  "version": "2.0.0",
+  "description": "Modern drag-and-drop form builder for WeWeb",
+  "scripts": {
+    "build": "weweb build",
+    "serve": "weweb serve"
+  },
+  "dependencies": {
+    "vuedraggable": "^4.1.0"
+  },
+  "devDependencies": {}
+}

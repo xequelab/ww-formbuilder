@@ -1,168 +1,48 @@
 <template>
-  <div 
-    class="form-field-wrapper"
-    :class="{ 
-      'field-selected': isSelected,
-      'field-hidden': isHidden
+  <div
+    class="form-field"
+    :class="{
+      'is-selected': isSelected,
+      'is-preview': isPreview
     }"
-    @click.stop="selectField"
+    @click.stop="$emit('select')"
   >
-    <div class="field-header" v-if="!isPreviewMode">
+    <!-- Field Header (Edit Mode Only) -->
+    <div v-if="!isPreview" class="field-header">
       <span class="field-type-badge">{{ field.type }}</span>
-      <button 
-        class="field-delete-btn" 
-        @click.stop="deleteField"
+      <button
+        class="field-delete"
+        @click.stop="$emit('delete')"
         title="Delete field"
       >
-        ×
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
       </button>
     </div>
 
+    <!-- Field Content -->
     <div class="field-content">
-      <!-- Heading -->
-      <component 
-        v-if="field.type === 'heading'"
-        :is="field.level || 'h2'"
-        class="form-heading"
-        :class="field.customClass"
-      >
-        {{ field.text || field.label }}
-      </component>
+      <label v-if="field.label" class="field-label">
+        {{ field.label }}
+        <span v-if="field.required" class="required">*</span>
+      </label>
 
-      <!-- Description -->
-      <p 
-        v-else-if="field.type === 'description'"
-        class="form-description"
-        :class="field.customClass"
-      >
-        {{ field.text || field.label }}
-      </p>
-
-      <!-- Regular Fields -->
-      <div v-else class="field-group">
-        <label 
-          v-if="field.label && field.type !== 'submit'" 
-          class="field-label"
-          :class="{ 'required': field.required }"
-        >
-          {{ field.label }}
-          <span v-if="field.required" class="required-indicator">*</span>
-        </label>
-
-        <!-- Text Input -->
-        <input
-          v-if="['text', 'email', 'number', 'phone', 'date', 'time'].includes(field.type)"
-          :type="field.type === 'phone' ? 'tel' : field.type"
-          :placeholder="field.placeholder"
-          :required="field.required"
-          :class="['field-input', field.customClass]"
-          :value="fieldValue"
-          @input="updateValue($event.target.value)"
-          :min="field.validation?.min"
-          :max="field.validation?.max"
-          :step="field.validation?.step"
-          :pattern="field.validation?.pattern"
-          :disabled="!isPreviewMode"
-        />
-
-        <!-- Textarea -->
-        <textarea
-          v-else-if="field.type === 'textarea'"
-          :placeholder="field.placeholder"
-          :required="field.required"
-          :rows="field.rows || 4"
-          :class="['field-textarea', field.customClass]"
-          :value="fieldValue"
-          @input="updateValue($event.target.value)"
-          :disabled="!isPreviewMode"
-        ></textarea>
-
-        <!-- Select -->
-        <select
-          v-else-if="field.type === 'select'"
-          :required="field.required"
-          :class="['field-select', field.customClass]"
-          :value="fieldValue"
-          @change="updateValue($event.target.value)"
-          :multiple="field.multiple"
-          :disabled="!isPreviewMode"
-        >
-          <option value="" disabled selected>{{ field.placeholder }}</option>
-          <option 
-            v-for="(option, idx) in field.options" 
-            :key="idx"
-            :value="option.value"
-          >
-            {{ option.label }}
-          </option>
-        </select>
-
-        <!-- Radio -->
-        <div v-else-if="field.type === 'radio'" class="field-options">
-          <label 
-            v-for="(option, idx) in field.options" 
-            :key="idx"
-            class="option-label"
-          >
-            <input
-              type="radio"
-              :name="field.id"
-              :value="option.value"
-              :checked="fieldValue === option.value"
-              @change="updateValue(option.value)"
-              :required="field.required"
-              :disabled="!isPreviewMode"
-            />
-            <span>{{ option.label }}</span>
-          </label>
-        </div>
-
-        <!-- Checkbox -->
-        <div v-else-if="field.type === 'checkbox'" class="field-options">
-          <label 
-            v-for="(option, idx) in field.options" 
-            :key="idx"
-            class="option-label"
-          >
-            <input
-              type="checkbox"
-              :value="option.value"
-              :checked="isChecked(option.value)"
-              @change="toggleCheckbox(option.value)"
-              :disabled="!isPreviewMode"
-            />
-            <span>{{ option.label }}</span>
-          </label>
-        </div>
-
-        <!-- File Upload -->
-        <input
-          v-else-if="field.type === 'file'"
-          type="file"
-          :required="field.required"
-          :class="['field-file', field.customClass]"
-          @change="handleFileUpload"
-          :accept="field.validation?.acceptedTypes"
-          :multiple="field.multiple"
-          :disabled="!isPreviewMode"
-        />
-
-        <!-- Submit Button -->
-        <button
-          v-else-if="field.type === 'submit'"
-          type="submit"
-          :class="['field-submit', `btn-${field.buttonStyle}`, field.customClass]"
-          @click.prevent="handleSubmit"
-        >
-          {{ field.buttonText || field.label }}
-        </button>
-      </div>
+      <input
+        v-model="localValue"
+        type="text"
+        :placeholder="field.placeholder"
+        :required="field.required"
+        :disabled="!isPreview"
+        class="field-input"
+        @input="handleInput"
+      />
     </div>
   </div>
 </template>
 
 <script>
-import { computed } from 'vue';
+import { ref, watch } from 'vue';
 
 export default {
   name: 'FormField',
@@ -175,131 +55,66 @@ export default {
       type: Boolean,
       default: false
     },
-    isPreviewMode: {
+    isPreview: {
       type: Boolean,
       default: false
     },
-    formValues: {
-      type: Object,
-      default: () => ({})
-    },
-    allFields: {
-      type: Array,
-      default: () => []
+    modelValue: {
+      type: String,
+      default: ''
     }
   },
-  emits: ['select', 'delete', 'update-value', 'submit'],
+  emits: ['select', 'delete', 'update:modelValue'],
   setup(props, { emit }) {
-    const fieldValue = computed(() => props.formValues?.[props.field?.id] || '');
+    const localValue = ref(props.modelValue || '');
 
-    const isHidden = computed(() => {
-      if (!props.field?.conditionalLogic?.enabled) return false;
-      
-      const logic = props.field.conditionalLogic;
-      const dependentValue = props.formValues?.[logic.fieldId];
-      
-      if (!dependentValue) return true;
-      
-      switch (logic.operator) {
-        case 'equals':
-          return dependentValue !== logic.value;
-        case 'not_equals':
-          return dependentValue === logic.value;
-        case 'contains':
-          return !String(dependentValue).includes(logic.value);
-        case 'greater_than':
-          return Number(dependentValue) <= Number(logic.value);
-        case 'less_than':
-          return Number(dependentValue) >= Number(logic.value);
-        default:
-          return false;
-      }
+    watch(() => props.modelValue, (newVal) => {
+      localValue.value = newVal || '';
     });
 
-    const selectField = () => {
-      if (!props.isPreviewMode) {
-        emit('select', props.field);
-      }
-    };
-
-    const deleteField = () => {
-      emit('delete', props.field.id);
-    };
-
-    const updateValue = (value) => {
-      emit('update-value', { fieldId: props.field.id, value });
-    };
-
-    const isChecked = (value) => {
-      const currentValue = fieldValue.value;
-      if (Array.isArray(currentValue)) {
-        return currentValue.includes(value);
-      }
-      return false;
-    };
-
-    const toggleCheckbox = (value) => {
-      let currentValue = fieldValue.value;
-      if (!Array.isArray(currentValue)) {
-        currentValue = [];
-      }
-      
-      const newValue = currentValue.includes(value)
-        ? currentValue.filter(v => v !== value)
-        : [...currentValue, value];
-      
-      updateValue(newValue);
-    };
-
-    const handleFileUpload = (event) => {
-      const files = event.target.files;
-      updateValue(files);
-    };
-
-    const handleSubmit = () => {
-      emit('submit');
+    const handleInput = () => {
+      emit('update:modelValue', localValue.value);
     };
 
     return {
-      fieldValue,
-      isHidden,
-      selectField,
-      deleteField,
-      updateValue,
-      isChecked,
-      toggleCheckbox,
-      handleFileUpload,
-      handleSubmit
+      localValue,
+      handleInput
     };
   }
 };
 </script>
 
-<style scoped lang="scss">
-.form-field-wrapper {
+<style scoped>
+.form-field {
   position: relative;
   padding: 16px;
   margin-bottom: 12px;
-  background: white;
+  background: #ffffff;
   border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  border-radius: 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+}
 
-  &:hover {
-    border-color: #3b82f6;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
-  }
+.form-field:hover {
+  border-color: #6366f1;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+  transform: translateY(-1px);
+}
 
-  &.field-selected {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
+.form-field.is-selected {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
 
-  &.field-hidden {
-    opacity: 0.5;
-    pointer-events: none;
-  }
+.form-field.is-preview {
+  cursor: default;
+  border-color: #e5e7eb;
+}
+
+.form-field.is-preview:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .field-header {
@@ -310,54 +125,40 @@ export default {
 }
 
 .field-type-badge {
-  display: inline-block;
-  padding: 4px 8px;
-  background: #f3f4f6;
-  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  border-radius: 4px;
   letter-spacing: 0.5px;
+  border-radius: 6px;
 }
 
-.field-delete-btn {
-  width: 24px;
-  height: 24px;
+.field-delete {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ef4444;
-  color: white;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: #fee;
+  color: #dc2626;
   border: none;
-  border-radius: 4px;
-  font-size: 18px;
-  line-height: 1;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
+}
 
-  &:hover {
-    background: #dc2626;
-  }
+.field-delete:hover {
+  background: #dc2626;
+  color: white;
+  transform: scale(1.1);
 }
 
 .field-content {
-  width: 100%;
-}
-
-.form-heading {
-  margin: 0 0 8px 0;
-  color: #111827;
-  font-weight: 700;
-}
-
-.form-description {
-  margin: 0 0 8px 0;
-  color: #6b7280;
-  line-height: 1.6;
-}
-
-.field-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -365,112 +166,42 @@ export default {
 
 .field-label {
   display: block;
-  font-weight: 600;
-  color: #374151;
   font-size: 14px;
-
-  &.required {
-    .required-indicator {
-      color: #ef4444;
-      margin-left: 2px;
-    }
-  }
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
 }
 
-.field-input,
-.field-textarea,
-.field-select,
-.field-file {
+.required {
+  color: #dc2626;
+  margin-left: 2px;
+}
+
+.field-input {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-  color: #111827;
+  padding: 12px 16px;
+  font-size: 15px;
+  color: #1f2937;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.field-input:focus {
   background: white;
-  transition: all 0.2s ease;
-
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  &::placeholder {
-    color: #9ca3af;
-  }
-
-  &:disabled {
-    background: #f9fafb;
-    cursor: not-allowed;
-  }
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
-.field-textarea {
-  resize: vertical;
-  min-height: 80px;
+.field-input:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
-.field-options {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.option-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #374151;
-
-  input[type="radio"],
-  input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-  }
-
-  &:hover {
-    color: #111827;
-  }
-}
-
-.field-submit {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &.btn-primary {
-    background: #3b82f6;
-    color: white;
-
-    &:hover {
-      background: #2563eb;
-    }
-  }
-
-  &.btn-secondary {
-    background: #6b7280;
-    color: white;
-
-    &:hover {
-      background: #4b5563;
-    }
-  }
-
-  &.btn-success {
-    background: #10b981;
-    color: white;
-
-    &:hover {
-      background: #059669;
-    }
-  }
+.field-input::placeholder {
+  color: #9ca3af;
 }
 </style>
